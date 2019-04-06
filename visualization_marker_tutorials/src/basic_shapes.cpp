@@ -27,25 +27,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
+#include <rclcpp/executors.hpp>
+#include <rclcpp/node.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+
+using visualization_msgs::msg::Marker;
 
 int main( int argc, char** argv )
 {
-  ros::init(argc, argv, "basic_shapes");
-  ros::NodeHandle n;
-  ros::Rate r(1);
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  using namespace std::chrono_literals;
+
+  rclcpp::init(argc, argv);
+  auto node = std::make_shared<rclcpp::Node>("basic_shapes");
+  auto marker_pub = node->create_publisher<Marker>("visualization_marker");
 
   // Set our initial shape type to be a cube
-  uint32_t shape = visualization_msgs::Marker::CUBE;
+  uint32_t shape = Marker::CUBE;
 
-  while (ros::ok())
-  {
-    visualization_msgs::Marker marker;
+  auto callback = [&]() {
+    Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     marker.header.frame_id = "/my_frame";
-    marker.header.stamp = ros::Time::now();
+    marker.header.stamp = rclcpp::Clock().now();
 
     // Set the namespace and id for this marker.  This serves to create a unique ID
     // Any marker sent with the same namespace and id will overwrite the old one
@@ -56,7 +59,7 @@ int main( int argc, char** argv )
     marker.type = shape;
 
     // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
-    marker.action = visualization_msgs::Marker::ADD;
+    marker.action = Marker::ADD;
 
     // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
     marker.pose.position.x = 0;
@@ -78,37 +81,30 @@ int main( int argc, char** argv )
     marker.color.b = 0.0f;
     marker.color.a = 1.0;
 
-    marker.lifetime = ros::Duration();
+    marker.lifetime = rclcpp::Duration(0.0);
 
     // Publish the marker
-    while (marker_pub.getNumSubscribers() < 1)
-    {
-      if (!ros::ok())
-      {
-        return 0;
-      }
-      ROS_WARN_ONCE("Please create a subscriber to the marker");
-      ros::Duration(1.0).sleep();
-    }
-    marker_pub.publish(marker);
+    marker_pub->publish(marker);
 
     // Cycle between different shapes
     switch (shape)
     {
-    case visualization_msgs::Marker::CUBE:
-      shape = visualization_msgs::Marker::SPHERE;
+    case Marker::CUBE:
+      shape = Marker::SPHERE;
       break;
-    case visualization_msgs::Marker::SPHERE:
-      shape = visualization_msgs::Marker::ARROW;
+    case Marker::SPHERE:
+      shape = Marker::ARROW;
       break;
-    case visualization_msgs::Marker::ARROW:
-      shape = visualization_msgs::Marker::CYLINDER;
+    case Marker::ARROW:
+      shape = Marker::CYLINDER;
       break;
-    case visualization_msgs::Marker::CYLINDER:
-      shape = visualization_msgs::Marker::CUBE;
+    case Marker::CYLINDER:
+      shape = Marker::CUBE;
       break;
     }
-
-    r.sleep();
-  }
+  };
+  rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(1s, callback);
+  rclcpp::spin(node);
+  rclcpp::shutdown();
+  return 0;
 }
