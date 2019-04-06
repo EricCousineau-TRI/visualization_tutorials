@@ -44,7 +44,8 @@ int main( int argc, char** argv )
   // Set our initial shape type to be a cube
   uint32_t shape = Marker::CUBE;
 
-  auto callback = [&]() {
+  auto callback = [&]()
+  {
     Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     marker.header.frame_id = "/my_frame";

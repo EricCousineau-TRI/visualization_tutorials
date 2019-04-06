@@ -15,6 +15,6 @@ function(custom_executable target)
 endfunction()
 
 custom_executable(basic_shapes)
-# custom_executable(points_and_lines.cpp)
+custom_executable(points_and_lines)
 
 ament_package()
